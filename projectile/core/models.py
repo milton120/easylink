@@ -53,7 +53,7 @@ class Person(AbstractBaseUser, PermissionsMixin, CreatedAtUpdatedAtBaseModel, Us
     email_on_new_message = models.BooleanField(default=True)
     email_on_new_like = models.BooleanField(default=True)
     email_when_edit_link = models.BooleanField(default=True)
-    email_when_edit_category = models.BooleanField(default=True)
+    email_when_edit_list = models.BooleanField(default=True)
     has_newsletter = models.BooleanField(default=True)
     has_weekletter = models.BooleanField(default=True)
     profile_image = TimestampImageField(
