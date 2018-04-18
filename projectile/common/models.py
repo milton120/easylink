@@ -37,8 +37,8 @@ class CreatedAtUpdatedAtBaseModel(models.Model):
 
 
 class NameSlugDescriptionBaseModel(CreatedAtUpdatedAtBaseModel):
-    name = models.CharField(max_length=200)
-    slug = models.SlugField(max_length=200, unique=True, null=True, editable=False)
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=512, unique=True, null=True, editable=False)
     description = models.TextField(blank=True)
 
     class Meta:
@@ -54,5 +54,5 @@ class NameSlugDescriptionBaseModel(CreatedAtUpdatedAtBaseModel):
     def save(self, *args, **kwargs):
         # just check if name is exist
         if self.name:
-            self.slug = slugify(self.name)
+            self.slug = slugify(self.name, allow_unicode=True)
             super(NameSlugDescriptionBaseModel, self).save(*args, **kwargs)
