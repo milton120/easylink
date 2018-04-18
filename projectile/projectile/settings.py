@@ -80,6 +80,7 @@ INSTALLED_APPS = [
     # project app
     'common',
     'core',
+    'bookmark',
 ]
 
 MIDDLEWARE = [
