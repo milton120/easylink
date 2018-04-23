@@ -11,7 +11,7 @@ from common.models import (
     CreatedAtUpdatedAtBaseModel,
     NameSlugDescriptionBaseModel,
 )
-id
+
 logger = logging.getLogger(__name__)
 
 class Tag(NameSlugDescriptionBaseModel):
