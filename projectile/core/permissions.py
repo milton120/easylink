@@ -14,13 +14,13 @@ class IsOwnerOrReadOnly(permissions.IsAuthenticatedOrReadOnly):
         if request.method in permissions.SAFE_METHODS:
             return True
 
-        return obj.user == request.user
+        return obj.entry_by == request.user
 
 
-class IsOwner(permissions.IsAuthenticatedOrReadOnly):
-
+class IsOwner(permissions.IsAuthenticated):
+    
     def has_object_permission(self, request, view, obj):
-        return obj.user == request.user
+        return obj.entry_by == request.user
 
 
 class IsOwnerOrSuperUserOrReadOnly(permissions.IsAuthenticatedOrReadOnly):

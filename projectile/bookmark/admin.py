@@ -4,7 +4,7 @@ from .models import Tag, Category, Link
 
 
 class TagAdmin(admin.ModelAdmin):
-    list_display = ('name', 'id', 'updated_at', 'updated_by', 'status')
+    list_display = ('name', 'id', 'updated_at', 'entry_by', 'status')
 
     list_filter = ('status',)
     search_fields = ('name', 'alias')

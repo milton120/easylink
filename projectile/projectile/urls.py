@@ -32,6 +32,9 @@ urlpatterns = [
     url(r'^api/v1/', include('core.urls.public')),
     url(r'^api/v1/me/', include('core.urls.me')),
 
+    # bookmark app
+    url(r'^api/v1/bookmark/', include('bookmark.urls')),
+
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^api-token-auth/', views.obtain_jwt_token),
     url(r'^api/v1/o/', include('oauth2_provider.urls', namespace='oauth2_provider')),

@@ -54,5 +54,9 @@ class NameSlugDescriptionBaseModel(CreatedAtUpdatedAtBaseModel):
     def save(self, *args, **kwargs):
         # just check if name is exist
         if self.name:
-            self.slug = slugify(self.name, allow_unicode=True)
+            repeat_count = self.__class__.objects.filter(name=self.name).count()
+            if repeat_count:
+                self.slug = slugify(self.name + '-' + str(repeat_count), allow_unicode=True)
+            else:
+                self.slug = slugify(self.name, allow_unicode=True)
             super(NameSlugDescriptionBaseModel, self).save(*args, **kwargs)
