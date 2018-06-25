@@ -25,6 +25,17 @@ class TagSerializer(ModelSerializer):
         )
 
 
+class TagLiteSerializer(ModelSerializer):
+    # pylint: disable=old-style-class, no-init
+    class Meta:
+        model = Tag
+        fields = (
+            'id',
+            'slug',
+            'name'
+        )
+    
+
 class CategorySerializer(ModelSerializer):
     # pylint: disable=old-style-class, no-init
     category = Category
@@ -62,6 +73,7 @@ class LinkBasicSerializer(ModelSerializer):
 class LinkSerializer(ModelSerializer):
     # pylint: disable=old-style-class, no-init
     category = CategorySerializer()
+    tags = TagLiteSerializer(many=True)
     class Meta:
         model = Link
         fields = (
@@ -73,6 +85,7 @@ class LinkSerializer(ModelSerializer):
             'image',
             'description',
             'category',
+            'tags',
             'status',
             'is_global'
         )

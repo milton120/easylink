@@ -88,6 +88,8 @@ class Link(CreatedAtUpdatedAtBaseModel):
         Category, models.DO_NOTHING, blank=True, null=True,
         related_name='links_of_category' 
     )
+    tags = models.ManyToManyField(
+        Tag, through='bookmark.LinkTag', related_name='link_of_tag')
     priority = models.PositiveIntegerField(default=0, help_text='Highest comes first.')
     is_global = models.IntegerField(
         choices=[(choice.value, choice.name.replace("_", " ")) for choice in PublishStatus],
@@ -114,3 +116,25 @@ class Link(CreatedAtUpdatedAtBaseModel):
                 name="unnamed", entry_by=Person.get_anonymous_user(),
                 is_global=PublishStatus.GLOBAL.value)
         super(Link, self).save(*args, **kwargs)
+
+
+class LinkTag(CreatedAtUpdatedAtBaseModel):
+    link = models.ForeignKey(
+        Link, models.DO_NOTHING, blank=True, null=True,
+        related_name='tag_link' 
+    )
+    tag = models.ForeignKey(
+        Tag, models.DO_NOTHING, blank=True, null=True,
+        related_name='link_tag' 
+    )
+
+    # pylint: disable=old-style-class, no-init
+    class Meta:
+        verbose_name = "Tag to Link"
+        verbose_name_plural = "Tags to Link"
+
+    def __str__(self):
+        return self.get_name()
+
+    def get_name(self):
+        return u"#{}: {} / {}".format(self.id, self.link, self.tag)

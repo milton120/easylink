@@ -1,4 +1,4 @@
-
+from django.db.models import Prefetch
 from rest_framework import generics, permissions
 from common.enums import Status
 from core.permissions import IsOwner
@@ -50,7 +50,10 @@ class PublicLinkList(generics.ListCreateAPIView):
             return LinkBasicSerializer
     
     def get_queryset(self):
-        return Link.objects.filter(
+        tags = Tag.objects.filter(status=Status.ACTIVE.value,)
+        return Link.objects.prefetch_related(
+            Prefetch('tags', queryset=tags)
+        ).select_related('category').filter(
             status=Status.ACTIVE,
             entry_by=Person.get_anonymous_user()
         ).order_by('-updated_at')
