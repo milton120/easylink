@@ -5,12 +5,18 @@ from django.db import models
 
 from django.utils.translation import gettext as _
 from django.utils.text import slugify
+from django.db.models import Q
+from django.core.exceptions import ValidationError
 
+from common.validators import url_validator
+from common.utils import slug_generator, get_website_title
+from common.enums import PublishStatus, Status
 from common.fields import TimestampImageField
 from common.models import (
     CreatedAtUpdatedAtBaseModel,
     NameSlugDescriptionBaseModel,
 )
+from core.models import Person
 
 logger = logging.getLogger(__name__)
 
@@ -32,13 +38,12 @@ class Tag(NameSlugDescriptionBaseModel):
 
 class Category(NameSlugDescriptionBaseModel):
     priority = models.PositiveIntegerField(default=0, help_text='Highest comes first.')
+    is_global = models.IntegerField(
+        choices=[(choice.value, choice.name.replace("_", " ")) for choice in PublishStatus],
+        default=PublishStatus.PRIVATE.value)
     class Meta:
         ordering = ('-updated_at',)
         verbose_name_plural = "Categories"
-        unique_together = (
-            'entry_by',
-            'name',
-        )
     
     def __str__(self):
         return self.get_name()
@@ -46,28 +51,50 @@ class Category(NameSlugDescriptionBaseModel):
     def get_name(self):
         return u"#{}: {}".format(self.id, self.name)
     
+    def clean(self):
+        if self.name and self.entry_by:
+            if not self.pk:
+                query = Category.objects.filter(
+                    status=Status.ACTIVE.value,
+                    name=self.name,
+                    entry_by=self.entry_by.pk
+                ).exists()
+            if self.pk:
+                query = Category.objects.filter(
+                    ~Q(pk=self.pk) &
+                    Q(name__iexact=self.name) &
+                    Q(status=Status.ACTIVE.value) &
+                    Q(entry_by=self.entry_by.pk)
+                ).exists()
+            if query:
+                raise ValidationError(
+                    {'name': _(
+                        "Category Name #{} already exists.".format(
+                            self.name
+                        )
+                    )}
+                )
+    
 
 class Link(CreatedAtUpdatedAtBaseModel):
     name = models.CharField(max_length=255, null=True, blank=True)
-    url = models.TextField(blank=False, null=False)
+    url = models.TextField(blank=False, null=False, validators=[url_validator])
     slug = models.SlugField(max_length=1024, unique=True, null=True, editable=False)
     image = TimestampImageField(
         upload_to='bookmark/link', blank=True, null=True)
     description = models.TextField(blank=True)
     # note: create_or_select a Anonymous category if user willing not to create a category
     category = models.ForeignKey(
-       Category, models.DO_NOTHING, blank=True, null=True,
-       related_name='links_of_category' 
+        Category, models.DO_NOTHING, blank=True, null=True,
+        related_name='links_of_category' 
     )
     priority = models.PositiveIntegerField(default=0, help_text='Highest comes first.')
+    is_global = models.IntegerField(
+        choices=[(choice.value, choice.name.replace("_", " ")) for choice in PublishStatus],
+        default=PublishStatus.PRIVATE.value)
 
     class Meta:
         ordering = ('-updated_at',)
-        unique_together = (
-            'entry_by',
-            'category',
-            'url',
-        )
     
     def __str__(self):
         return self.get_name()
@@ -77,12 +104,13 @@ class Link(CreatedAtUpdatedAtBaseModel):
     
     def save(self, *args, **kwargs):
         if self.name:
-            self.slug = slugify(self.name, allow_unicode=True)
+            self.slug = self.slug = slug_generator(self.name[:128], self.__class__)
         if not self.name:
-                self.name = self.url[:255]
-                self.slug = slugify(self.name, allow_unicode=True)
+            self.name = get_website_title(self.url)
+            self.slug = slug_generator(self.name, self.__class__)
 
         if not self.category:
-            self.category, _ = Category.objects.get_or_create(name="unnamed")
+            self.category, _ = Category.objects.get_or_create(
+                name="unnamed", entry_by=Person.get_anonymous_user(),
+                is_global=PublishStatus.GLOBAL.value)
         super(Link, self).save(*args, **kwargs)
-

@@ -2,8 +2,8 @@ import uuid
 from django.utils import timezone
 from django.db import models
 from django.db.models import Q
-from django.utils.text import slugify
 from .enums import Status
+from .utils import slug_generator
 
 
 class CreatedAtUpdatedAtBaseModel(models.Model):
@@ -54,9 +54,5 @@ class NameSlugDescriptionBaseModel(CreatedAtUpdatedAtBaseModel):
     def save(self, *args, **kwargs):
         # just check if name is exist
         if self.name:
-            repeat_count = self.__class__.objects.filter(name=self.name).count()
-            if repeat_count:
-                self.slug = slugify(self.name + '-' + str(repeat_count), allow_unicode=True)
-            else:
-                self.slug = slugify(self.name, allow_unicode=True)
+            self.slug = slug_generator(self.name, self.__class__)
             super(NameSlugDescriptionBaseModel, self).save(*args, **kwargs)

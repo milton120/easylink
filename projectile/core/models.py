@@ -81,3 +81,9 @@ class Person(AbstractBaseUser, PermissionsMixin, CreatedAtUpdatedAtBaseModel, Us
 
     def get_short_name(self):
         return u"{}".format(self.email)
+
+    def get_anonymous_user():
+        person, _ = Person.objects.get_or_create(
+            status=Status.INACTIVE.value,
+            username='anonymous', email="anonymous@email.com")
+        return person
