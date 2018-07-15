@@ -76,6 +76,7 @@ INSTALLED_APPS = [
     'rest_framework_swagger',
     'djoser',
     'sorl.thumbnail',
+    'webpack_loader',
 
     # project app
     'common',
@@ -178,6 +179,7 @@ STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
+    os.path.join(REPO_DIR, 'assets'),
 ]
 
 # Do not auto append slashes in urls
@@ -327,3 +329,12 @@ DJOSER = {
 
 # SORL THUMBNAIL SETTINGS
 THUMBNAIL_KVSTORE = 'sorl.thumbnail.kvstores.redis_kvstore.KVStore'
+
+
+# react webpack loader
+WEBPACK_LOADER = {
+    'DEFAULT': {
+            'BUNDLE_DIR_NAME': 'bundles/',
+            'STATS_FILE': os.path.join(REPO_DIR, 'webpack-stats.json'),
+        }
+}

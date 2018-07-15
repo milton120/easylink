@@ -26,6 +26,7 @@ config.codekit
 projectile/.env
 yarn.lock
 package-lock.json
+webpack-stats.json
 *.sqlite3
 
 
