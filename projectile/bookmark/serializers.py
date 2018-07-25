@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import ModelSerializer, ImageField
 from rest_framework.validators import UniqueTogetherValidator
 
 from .validators import unique_tag_name_by_owner
@@ -34,17 +34,37 @@ class TagLiteSerializer(ModelSerializer):
             'slug',
             'name'
         )
-    
 
-class CategorySerializer(ModelSerializer):
+
+class CategoryBasicSerializer(ModelSerializer):
     # pylint: disable=old-style-class, no-init
-    category = Category
     class Meta:
-        model = Link
+        model = Category
         fields = (
             'id',
             'slug',
             'name',
+            'status',
+            'priority',
+            'is_global',
+            'image',
+        )
+        read_only_fields = (
+            'id',
+            'slug',
+        )
+
+
+class CategorySerializer(ModelSerializer):
+    thumb_small = ImageField(source='get_thumb_small', read_only=True)
+    # pylint: disable=old-style-class, no-init
+    class Meta:
+        model = Category
+        fields = (
+            'id',
+            'slug',
+            'name',
+            'thumb_small',
         )
 
 
@@ -87,5 +107,6 @@ class LinkSerializer(ModelSerializer):
             'category',
             'tags',
             'status',
-            'is_global'
+            'is_global',
+            'entry_by'
         )

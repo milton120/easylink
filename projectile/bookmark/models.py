@@ -12,6 +12,7 @@ from common.validators import url_validator
 from common.utils import slug_generator, get_website_title
 from common.enums import PublishStatus, Status
 from common.fields import TimestampImageField
+from common.mixins import ImageThumbFieldMixin
 from common.models import (
     CreatedAtUpdatedAtBaseModel,
     NameSlugDescriptionBaseModel,
@@ -36,13 +37,15 @@ class Tag(NameSlugDescriptionBaseModel):
         return u"#{}: {}".format(self.id, self.name)
 
 
-class Category(NameSlugDescriptionBaseModel):
+class Category(NameSlugDescriptionBaseModel, ImageThumbFieldMixin):
     priority = models.PositiveIntegerField(default=0, help_text='Highest comes first.')
     is_global = models.IntegerField(
         choices=[(choice.value, choice.name.replace("_", " ")) for choice in PublishStatus],
         default=PublishStatus.PRIVATE.value)
+    image = TimestampImageField(
+        upload_to='bookmark/categories', blank=True, null=True)
     class Meta:
-        ordering = ('-updated_at',)
+        ordering = ('-priority', '-updated_at',)
         verbose_name_plural = "Categories"
     
     def __str__(self):
@@ -53,20 +56,14 @@ class Category(NameSlugDescriptionBaseModel):
     
     def clean(self):
         if self.name and self.entry_by:
-            if not self.pk:
-                query = Category.objects.filter(
-                    status=Status.ACTIVE.value,
-                    name=self.name,
-                    entry_by=self.entry_by.pk
-                ).exists()
+            query = Category.objects.filter(
+                status=Status.ACTIVE.value,
+                name=self.name,
+                entry_by=self.entry_by.pk
+            )
             if self.pk:
-                query = Category.objects.filter(
-                    ~Q(pk=self.pk) &
-                    Q(name__iexact=self.name) &
-                    Q(status=Status.ACTIVE.value) &
-                    Q(entry_by=self.entry_by.pk)
-                ).exists()
-            if query:
+                query = query.excludes(pk=self.pk)
+            if query.exists():
                 raise ValidationError(
                     {'name': _(
                         "Category Name #{} already exists.".format(
@@ -74,9 +71,15 @@ class Category(NameSlugDescriptionBaseModel):
                         )
                     )}
                 )
+
+    def save(self, *args, **kwargs):
+        if self.pk is None:
+            self.create_thumbnails()
+            # self.image = clean_image(self.image)
+        super(Category, self).save(*args, **kwargs)
     
 
-class Link(CreatedAtUpdatedAtBaseModel):
+class Link(CreatedAtUpdatedAtBaseModel, ImageThumbFieldMixin):
     name = models.CharField(max_length=255, null=True, blank=True)
     url = models.TextField(blank=False, null=False, validators=[url_validator])
     slug = models.SlugField(max_length=1024, unique=True, null=True, editable=False)
@@ -107,6 +110,7 @@ class Link(CreatedAtUpdatedAtBaseModel):
     def save(self, *args, **kwargs):
         if self.name:
             self.slug = self.slug = slug_generator(self.name[:128], self.__class__)
+
         if not self.name:
             self.name = get_website_title(self.url)
             self.slug = slug_generator(self.name, self.__class__)
@@ -115,6 +119,11 @@ class Link(CreatedAtUpdatedAtBaseModel):
             self.category, _ = Category.objects.get_or_create(
                 name="unnamed", entry_by=Person.get_anonymous_user(),
                 is_global=PublishStatus.GLOBAL.value)
+
+        if self.pk is None:
+            self.create_thumbnails()
+
+        self.image = clean_image(self.image)
         super(Link, self).save(*args, **kwargs)
 
 

@@ -4,9 +4,11 @@ from common.enums import Status
 from core.permissions import IsOwner
 from core.models import Person
 
-from .models import Tag, Link
+from .models import Tag, Category, Link
 from .serializers import (
     TagSerializer,
+    CategoryBasicSerializer,
+    CategorySerializer,
     LinkBasicSerializer,
     LinkSerializer,
 )
@@ -38,6 +40,44 @@ class TagList(generics.ListCreateAPIView):
         serializer.save(**self.create_data)
 
 
+class CategoryList(generics.ListCreateAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return CategorySerializer
+        return CategoryBasicSerializer
+    
+    def get_queryset(self):
+        return Category.objects.filter(
+            status=Status.ACTIVE,
+            entry_by=self.request.user
+        )
+    
+    def perform_create(self, serializer, extra_fields=None):
+        self.create_data = {}
+        if hasattr(serializer.Meta.model, 'entry_by'):
+            self.create_data['entry_by'] = self.request.user
+            self.create_data['updated_by'] = self.request.user
+
+        if extra_fields is not None:
+            self.add_extra_fields(extra_fields)
+
+        serializer.save(**self.create_data)
+
+
+class CategoryDetails(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = (IsOwner,)
+    serializer_class = CategoryBasicSerializer
+    lookup_field = 'slug'
+
+    def get_queryset(self):
+        return Category.objects.filter(
+            status=Status.ACTIVE,
+            entry_by=self.request.user
+        )
+
+
 class PublicLinkList(generics.ListCreateAPIView):
     """Get all links and create new one"""
     permission_classes = (
@@ -46,12 +86,10 @@ class PublicLinkList(generics.ListCreateAPIView):
     def get_serializer_class(self):
         if self.request.method == 'GET':
             return LinkSerializer
-        else:
-            return LinkBasicSerializer
+        return LinkBasicSerializer
     
     def get_queryset(self):
         tags = Tag.objects.filter(status=Status.ACTIVE.value,)
-        print(self.request.user)
         return Link.objects.prefetch_related(
             Prefetch('tags', queryset=tags)
         ).select_related('category').filter(
@@ -73,3 +111,18 @@ class PublicLinkList(generics.ListCreateAPIView):
             self.add_extra_fields(extra_fields)
 
         serializer.save(**self.create_data)
+
+
+class UserLinkList(generics.ListAPIView):
+    """Get all Private links"""
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = LinkSerializer
+
+    def get_queryset(self):
+        tags = Tag.objects.filter(status=Status.ACTIVE.value,)
+        return Link.objects.prefetch_related(
+            Prefetch('tags', queryset=tags)
+        ).select_related('category').filter(
+            status=Status.ACTIVE,
+            entry_by=self.request.user
+        ).order_by('-updated_at')

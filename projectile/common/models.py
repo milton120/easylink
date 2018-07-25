@@ -53,6 +53,6 @@ class NameSlugDescriptionBaseModel(CreatedAtUpdatedAtBaseModel):
 
     def save(self, *args, **kwargs):
         # just check if name is exist
-        if self.name:
+        if self.pk is None:
             self.slug = slug_generator(self.name, self.__class__)
             super(NameSlugDescriptionBaseModel, self).save(*args, **kwargs)
