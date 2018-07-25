@@ -12,7 +12,8 @@ class EasyLinkTestCase(TestCase):
 
     def setUp(self):
         self.client = APIClient()
-        self.user = PersonFactory(is_staff=True)
+        self.user = PersonFactory()
+        self.admin_user = PersonFactory(is_staff=True)
 
     def assertCreated(self, request):
         self.assertEqual(request.status_code, 201)

@@ -72,7 +72,7 @@ class Person(AbstractBaseUser, PermissionsMixin, CreatedAtUpdatedAtBaseModel, Us
         verbose_name_plural = _('persons')
 
     def __str__(self):
-        return u"{} {} - {}".format(self.first_name, self.last_name, self.email)
+        return u"#{} {} {} - {}".format(self.pk, self.first_name, self.last_name, self.email)
 
     def get_full_name(self):
         """ Returns the full name """

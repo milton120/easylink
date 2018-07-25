@@ -51,6 +51,7 @@ class PublicLinkList(generics.ListCreateAPIView):
     
     def get_queryset(self):
         tags = Tag.objects.filter(status=Status.ACTIVE.value,)
+        print(self.request.user)
         return Link.objects.prefetch_related(
             Prefetch('tags', queryset=tags)
         ).select_related('category').filter(
